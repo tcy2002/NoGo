@@ -1,6 +1,7 @@
 #include "NoGo_frame.h"
 #include <Windows.h>
 
+HWND h = GetForegroundWindow();
 int frame::x;
 int frame::y;
 int frame::gamelevel;
@@ -8,6 +9,7 @@ int frame::player;
 int frame::chosen;
 int frame::begin = 1;
 int frame::stop = 0;
+int *frame::lastChosen = new int[2];
 int frame::state[9][9] = {{0}};
 bool frame::checked[9][9] = {{false}};
 bool frame::nothere[9][9] = {{false}};
@@ -21,13 +23,21 @@ void frame::xy(int a, int b)
 
 void frame::input()
 {
-    while (!GetAsyncKeyState(VK_LBUTTON));
+    HWND h1;
+    while (1)
+    {
+        if (!GetAsyncKeyState(VK_LBUTTON))
+            continue;
+        h1 = GetForegroundWindow();
+        if (h1 != h)
+            continue;
+        break;
+    }
 
     POINT p;
-    HWND h = GetForegroundWindow();
     GetCursorPos(&p);
     ScreenToClient(h, &p);
-    x = p.x / 16, y = p.y / 16;
+    x = int(p.x) / 16, y = int(p.y) / 16;
 
     Sleep(200);
 }
@@ -37,7 +47,6 @@ void frame::initial()
     CONSOLE_CURSOR_INFO c = {1, 0};
     SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &c);
     HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
-
     DWORD mode;
     GetConsoleMode(hStdin, &mode);
     mode &= ~ENABLE_QUICK_EDIT_MODE;
@@ -50,57 +59,57 @@ void frame::gameframe()
         for (int j = 0; j < 7; j++)
         {
             xy(i * 2 + 3, j * 2 + 3);
-            cout << "©à";
+            cout << "â”¼";
         }
 
     for (int i = 0; i < 8; i++)
         for (int j = 0; j < 9; j++)
         {
             xy(i * 2 + 2, j * 2 + 1);
-            cout << "©¤";
+            cout << "â”€";
         }
 
     for (int i = 0; i < 9; i++)
         for (int j = 0; j < 8; j++)
         {
             xy(i * 2 + 1, j * 2 + 2);
-            cout << "©¦";
+            cout << "â”‚";
         }
 
     for (int i = 0; i < 7; i++)
     {
         xy(i * 2 + 3, 1);
-        cout << "©Ð";
+        cout << "â”¬";
         xy(1, i * 2 + 3);
-        cout << "©À";
+        cout << "â”œ";
         xy(17, i * 2 + 3);
-        cout << "©È";
+        cout << "â”¤";
         xy(i * 2 + 3, 17);
-        cout << "©Ø";
+        cout << "â”´";
     }
 
     xy(1, 1);
-    cout << "©°";
+    cout << "â”Œ";
     xy(1, 17);
-    cout << "©¸";
+    cout << "â””";
     xy(17, 1);
-    cout << "©´";
+    cout << "â”";
     xy(17, 17);
-    cout << "©¼";
+    cout << "â”˜";
 
     xy(19, 1);
-    cout << "²»Î§Æå";
+    cout << "ä¸å›´æ£‹";
     xy(2, 18);
-    cout << "²Ù×÷·½·¨£ºÊó±ê×ó¼üµ¥»÷    µ±Ç°Íæ¼Ò£º";
+    cout << "æ“ä½œæ–¹æ³•ï¼šé¼ æ ‡å·¦é”®å•å‡»    å½“å‰çŽ©å®¶ï¼š";
 
     for (int i = 0; i < 9; i++)
         for (int j = 0; j < 9; j++)
         {
             xy(i * 2 + 1, j * 2 + 1);
             if (state[i][j] == 1)
-                cout << "¡ñ";
+                cout << "â—";
             else if (state[i][j] == 2)
-                cout << "¡ð";
+                cout << "â—‹";
         }
 }
 
@@ -109,53 +118,53 @@ void frame::button()
     for (int i = 0; i < 8; i++)
     {
         xy(19, i * 2 + 3);
-        cout << "¨T ¨T ¨T";
+        cout << "â• â• â•";
     }
 
     for (int i = 0; i < 4; i++)
     {
         xy(18, i * 4 + 4);
-        cout << "¨U       ¨U";
+        cout << "â•‘       â•‘";
     }
 
     for (int i = 0; i < 4; i++)
     {
         xy(18, i * 4 + 3);
-        cout << "¨X";
+        cout << "â•”";
         xy(22, i * 4 + 3);
-        cout << "¨[";
+        cout << "â•—";
         xy(18, i * 4 + 5);
-        cout << "¨^";
+        cout << "â•š";
         xy(22, i * 4 + 5);
-        cout << "¨a";
+        cout << "â•";
     }
 
     xy(19, 4);
-    cout << "ÐÂ¿ªÊ¼";
+    cout << "æ–°å¼€å§‹";
     xy(20, 6);
     cout << "  ";
     xy(19, 8);
-    cout << "´ò  ¿ª";
+    cout << "æ‰“  å¼€";
     xy(20, 10);
     cout << "  ";
     xy(19, 12);
-    cout << "±£  ´æ";
+    cout << "ä¿  å­˜";
     xy(20, 14);
     cout << "  ";
     xy(19, 16);
-    cout << "½á  Êø";
+    cout << "ç»“  æŸ";
 
     xy(20, 18);
     if (player == 0)
-        cout << "¡ñ";
+        cout << "â—";
     else
-        cout << "¡ð";
+        cout << "â—‹";
 }
 
-bool frame::display()
+bool frame::error()
 {
     xy(1, 0);
-    cout << "´Ë´¦ÎÞ·¨Âä×Ó";
+    cout << "æ­¤å¤„æ— æ³•è½å­";
     Sleep(1000);
     cout << "\r              ";
 
