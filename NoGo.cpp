@@ -26,14 +26,14 @@ void nogo::level1()
 
 void nogo::level2()
 {
-    //Êı¾İ³õÊ¼»¯
+    //æ•°æ®åˆå§‹åŒ–
     returnok();
     int maxs[9][9] = {{0}};
     for (int i = 0; i < 9; i++)
         for (int j = 0; j < 9; j++)
             data[i][j] = -40;
 
-    //·µ»ØdataÖµ
+    //è¿”å›dataå€¼
     for (int i = 0; i < 9; i++)
         for (int j = 0; j < 9; j++)
             if (!nothere[i][j])
@@ -42,7 +42,7 @@ void nogo::level2()
                 returnok();
             }
 
-    //Ñ°ÕÒ×î´ódataÖµ
+    //å¯»æ‰¾æœ€å¤§dataå€¼
     int max = -40;
     for (int i = 0; i < 9; i++)
         for (int j = 0; j < 9; j++)
@@ -74,7 +74,7 @@ void nogo::level2()
 
 void nogo::level3()
 {
-    //Êı¾İ³õÊ¼»¯
+    //æ•°æ®åˆå§‹åŒ–
     returnok();
     int maxs[9][9] = {{0}};
     for (int i = 0; i < 9; i++)
@@ -84,7 +84,7 @@ void nogo::level3()
             data0[i][j] = -200;
         }
 
-    //·µ»ØdataÖµ
+    //è¿”å›dataå€¼
     for (int i = 0; i < 9; i++)
         for (int j = 0; j < 9; j++)
             if (!nothere[i][j])
@@ -93,7 +93,7 @@ void nogo::level3()
                 returnok();
             }
 
-    //Ñ°ÕÒ×î´ódata0Öµ
+    //å¯»æ‰¾æœ€å¤§data0å€¼
     int max = -200;
     for (int i = 0; i < 9; i++)
         for (int j = 0; j < 9; j++)
@@ -189,4 +189,16 @@ void nogo::returndata0(int a, int b)
     state[a][b] = 0;
 
     data0[a][b] = win * 4 + half - lose * 2;
+}
+
+void nogo::AIaction()
+{
+    if (player != chosen && !stop)
+        switch (gamelevel)
+        {
+            case 1: level1(); break;
+            case 2: level2(); break;
+            case 3: level3(); break;
+            default: level4(chosen, lastChosen);
+        }
 }
