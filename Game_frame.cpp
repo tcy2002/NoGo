@@ -1,7 +1,7 @@
 #include "NoGo_frame.h"
 #include <Windows.h>
 
-void frame::choose()
+int *frame::choose(int lastChosen[2])
 {
     bool flag;
 
@@ -22,6 +22,12 @@ void frame::choose()
             cout << "\r                              ";
         }
     }while (flag);
+
+
+    lastChosen[0] = (x - 1) / 2;
+    lastChosen[1] = (y - 1) / 2;
+
+    return lastChosen;
 }
 
 bool frame::print()
@@ -31,7 +37,7 @@ bool frame::print()
         state[(x - 1) / 2][(y - 1) / 2] = player + 1;
 
         xy(x, y);
-        if (player == 0)
+        if (!player)
             cout << "●";
         else
             cout << "○";
@@ -39,12 +45,33 @@ bool frame::print()
         player = (player + 1) % 2;
 
         xy(20, 18);
-        if (player == 0)
+        if (!player)
             cout << "●";
         else
             cout << "○";
     }
 
+    return true;
+}
+
+bool frame::HumanAction()
+{
+    do {lastChosen = choose(lastChosen);} while (x <= 17 && nothere[(x - 1) / 2][(y - 1) / 2] && !stop && error());
+
+    if (x <= 17)
+        !stop && print() && (begin = 0); //落子
+    else if (y < 6)
+        restart();                           //重新开始
+    else if (y < 10)
+        open();                              //读档
+    else if (y < 14)
+        save();                              //存档
+    else
+    {
+        xy(0, 20);                           //结束
+        system("pause");
+        return false;
+    }
     return true;
 }
 
@@ -131,4 +158,16 @@ bool frame::renew()
             checked[m][n] = false;
 
     return true;
+}
+
+void frame::exit()
+{
+    if (win() && (stop = 1))
+    {
+        xy(1, 0);
+        if (player)
+            cout << "黑方获胜";
+        else
+            cout << "白方获胜";
+    }
 }
