@@ -1,3 +1,4 @@
+#include <iostream>
 #include <climits>
 #include <cstring>
 #include <ctime>
@@ -7,17 +8,19 @@
 #include <string>
 #include "NoGo.h"
 
+using namespace std;
+
 void nogo::level4(int chosen, int *lastChosen)
 {
     int count = 0; //总节点数
     int board[9][9] = {0};
     srand(clock());
     int start = clock();
-    int timeout = CLOCKS_PER_SEC;
+    int timeout = (int)(0.98 * (double)CLOCKS_PER_SEC);
     for (int i = 0; i < 9; i++)
         for (int j = 0; j < 9; j++)
         {
-            if (!state[i][j])
+            if (!state[i][j] || (i == lastChosen[0] && j == lastChosen[1]))
                 continue;
             if (chosen)
                 board[i][j] = state[i][j] * 2 - 3;
@@ -27,11 +30,11 @@ void nogo::level4(int chosen, int *lastChosen)
 
     nogoMCTS rootNode(board, lastChosen, nullptr, &count); //创建根节点，根节点的父节点为空
 
-    while (clock() - start < timeout)
+    while (clock() - start < timeout)         //达到时间则结束拓展
     {
-        count++;                                 //计算的节点数++
-        nogoMCTS *node = rootNode.treeRules();   //拓展一次，node指向的是一次拓展的叶节点
-        double result = node->simulation();     //结果估值
+        count++;                              //计算的节点数++
+        nogoMCTS *node = rootNode.treeRules(); //拓展一次，node指向的是一次拓展的叶节点
+        double result = node->simulation();   //结果估值
         node->backup(result);
 
     }
@@ -39,8 +42,7 @@ void nogo::level4(int chosen, int *lastChosen)
     int bestChildrenNum = 0;              //最优子节点个数
     int maxValue = INT_MIN;               //当前最优子节点分数
 
-    for (int i = 0; i < rootNode.childrenCount; ++i)
-    {
+    for (int i = 0; i < rootNode.childrenCount; i++)
         if (maxValue < rootNode.children[i]->value)
         {
             //重置
@@ -51,10 +53,7 @@ void nogo::level4(int chosen, int *lastChosen)
             maxValue = rootNode.children[i]->value;
         }
         else if (maxValue == rootNode.children[i]->value)
-        {
             bestChildren[bestChildrenNum++] = i;
-        }
-    }
 
     int r = rand() % bestChildrenNum;                           //在所有最优中任选一个
     int *bestAction = rootNode.childrenAction[bestChildren[r]]; //最优子节点对应走法
@@ -70,13 +69,16 @@ int dx[4] = {-1, 0, 1, 0}; //行位移
 int dy[4] = {0, -1, 0, 1}; //列位移
 bool visited_by_air_judge[9][9] = {false}; //在air_judge函数判断某一点有无气时作标记，防止重复而死循环
 
-bool inBoard_judge(int x, int y) { return 0 <= x && x < 9 && 0 <= y && y < 9; }
+bool inBoard_judge(int x, int y)
+{
+    return 0 <= x && x < 9 && 0 <= y && y < 9;
+}
 
 bool air_judge(int board[9][9], int x, int y)
 {
     visited_by_air_judge[x][y] = true; //标记，表示这个位置已经搜过有无气了
     bool flag = false;
-    for (int dir = 0; dir < 4; ++dir)
+    for (int dir = 0; dir < 4; dir++)
     {
         int x_dx = x + dx[dir], y_dy = y + dy[dir];
         if (inBoard_judge(x_dx, y_dy)) //界内
@@ -107,18 +109,16 @@ bool put_available(int board[9][9], int x, int y, int color)
         return false;
     }
 
-    for (int i = 0; i < 4; ++i) //判断下完这步周围位置的棋子是否有气
+    for (int i = 0; i < 4; i++) //判断下完这步周围位置的棋子是否有气
     {
         int x_dx = x + dx[i], y_dy = y + dy[i];
         if (inBoard_judge(x_dx, y_dy)) //在棋盘内
-        {
             if (board[x_dx][y_dy] && !visited_by_air_judge[x_dx][y_dy]) //对于有棋子的位置（标记访问过避免死循环）
                 if (!air_judge(board, x_dx, y_dy))                      //如果导致(x_dx,y_dy)没气了，则不能下
                 {
                     board[x][y] = 0; //回溯
                     return false;
                 }
-        }
     }
     board[x][y] = 0; //回溯
     return true;
@@ -128,29 +128,21 @@ int getValidPositions(int board[9][9], int result[9][9])
 {
     memset(result, 0, MAXBranchNum * 4);
     int right = 0;
-    for (int x = 0; x < 9; ++x)
-    {
-        for (int y = 0; y < 9; ++y)
-        {
+    for (int x = 0; x < 9; x++)
+        for (int y = 0; y < 9; y++)
             if (put_available(board, x, y, 1))
             {
                 right++;
                 result[x][y] = 1;
             }
-        }
-    }
     return right;
 }
 
 nogoMCTS::nogoMCTS(int parentBoard[9][9], int opp_action[2], nogoMCTS *parentPointer, int *countp)
 {
-    for (int i = 0; i < 9; ++i) //把棋盘反过来，要落子方是1 ，对手是-1
-    {
-        for (int j = 0; j < 9; ++j)
-        {
+    for (int i = 0; i < 9; i++) //把棋盘反过来，要落子方是1 ，对手是-1
+        for (int j = 0; j < 9; j++)
             board[i][j] = -parentBoard[i][j];
-        }
-    }
 
     if (opp_action[0] >= 0 && opp_action[0] < 9 && opp_action[1] >= 0 && opp_action[1] < 9)
         board[opp_action[0]][opp_action[1]] = -1;
@@ -166,9 +158,7 @@ typename nogoMCTS::nogoMCTS *nogoMCTS::treeRules()
 {
     //如果没有位置下了（终局）
     if (childrenCountMax == 0)
-    {
         return this; //到达终局当前叶节点
-    }
 
     //如果是叶节点，Node Expansion，拓展下一层节点
     if (childrenCountMax > childrenCount)
@@ -180,22 +170,19 @@ typename nogoMCTS::nogoMCTS *nogoMCTS::treeRules()
     }
 
     //计算当前节点的每个子节点的UCB值（点亮某个节点）
-    for (int i = 0; i < childrenCount; ++i)
-    {
+    for (int i = 0; i < childrenCount; i++)
         children[i]->UCB = children[i]->value / double(children[i]->n) + 0.2 * sqrt(log(double(*countPointer)) / double(children[i]->n)); //UCB公式
-    }
+
     int bestChild = 0;
     double maxUCB = 0;
 
     //找出所有子节点中UCB值最大的子节点
-    for (int i = 0; i < childrenCount; ++i)
-    {
+    for (int i = 0; i < childrenCount; i++)
         if (maxUCB < children[i]->UCB)
         {
             bestChild = i;
             maxUCB = children[i]->UCB;
         }
-    }
 
     return children[bestChild]->treeRules(); //对UCB最大的子节点进行下一层搜索
 }
@@ -204,13 +191,9 @@ double nogoMCTS::simulation()
 {
     int board_opp[9][9]; //对手棋盘
     int res[9][9];
-    for (int i = 0; i < 9; ++i)
-    {
-        for (int j = 0; j < 9; ++j)
-        {
+    for (int i = 0; i < 9; i++)
+        for (int j = 0; j < 9; j++)
             board_opp[i][j] = -board[i][j];
-        }
-    }
     int x = getValidPositions(board, res);     //落子方可下位置数
     int y = getValidPositions(board_opp, res); //非落子方可下位置数
     return x - y;
@@ -243,19 +226,15 @@ void nogoMCTS::evaluate()
     int validPositionCount = getValidPositions(board, result); //能下的位置数
     int validPositions[MAXBranchNum];                          //能下的位置坐标
     int availableNum = 0;
-    for (int i = 0; i < 9; ++i)
-    {
-        for (int j = 0; j < 9; ++j)
-        {
+    for (int i = 0; i < 9; i++)
+        for (int j = 0; j < 9; j++)
             if (result[i][j])
             {
                 validPositions[availableNum] = i * 9 + j; //可下的位置
                 availableNum++;                           //可下的位置数
             }
-        }
-    }
     childrenCountMax = validPositionCount; //总共能下的位置数
-    for (int i = 0; i < validPositionCount; ++i)
+    for (int i = 0; i < validPositionCount; i++)
     {
         childrenAction[i][0] = validPositions[i] / 9;
         childrenAction[i][1] = validPositions[i] % 9;
