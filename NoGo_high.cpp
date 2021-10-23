@@ -16,7 +16,7 @@ void nogo::level4(int chosen, int *lastChosen)
     int board[9][9] = {0};
     srand(clock());
     int start = clock();
-    int timeout = (int)(0.98 * (double)CLOCKS_PER_SEC);
+    int timeout = (int)(1.5 * (double)CLOCKS_PER_SEC);
     for (int i = 0; i < 9; i++)
         for (int j = 0; j < 9; j++)
         {
